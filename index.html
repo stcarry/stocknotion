@@ -3,17 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dr.sFit Stock Dashboard</title>
+    <title>Dr.sFit Portfolio Dashboard</title>
     <style>
         body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #fff; }
         
-        /* 1. 상단 버튼 스타일 (SaaS 느낌) */
+        /* 네비게이션 버튼 스타일 */
         .nav-container {
             display: flex;
             gap: 10px;
             padding: 10px 15px;
             background-color: #f5f5f5;
             border-bottom: 1px solid #ddd;
+            align-items: center;
         }
         .sector-btn {
             padding: 8px 16px;
@@ -24,104 +25,51 @@
             font-size: 14px;
             font-weight: 600;
             transition: all 0.2s;
-            color: #333;
+            color: #555;
         }
-        .sector-btn:hover { background-color: #eef; border-color: #ccf; }
+        .sector-btn:hover { background-color: #eef; border-color: #ccf; color: #2962FF; }
         .sector-btn.active { background-color: #2962FF; color: white; border-color: #2962FF; }
+        
+        /* 안내 문구 */
+        .info-text { font-size: 12px; color: #888; margin-left: auto; }
 
-        /* 2. 차트 영역 */
-        #chart-box {
-            height: calc(100vh - 60px); /* 버튼 높이 제외한 전체 화면 */
+        /* 차트 영역 (iframe) */
+        #chart-frame {
             width: 100%;
+            height: calc(100vh - 60px); /* 버튼 높이 제외 */
+            border: none;
         }
-        .tradingview-widget-container { height: 100% !important; width: 100% !important; }
     </style>
 </head>
 <body>
 
     <div class="nav-container">
-        <button class="sector-btn" onclick="loadSector('medical')">🏥 의료/바이오</button>
-        <button class="sector-btn" onclick="loadSector('tech')">💻 반도체/AI</button>
-        <button class="sector-btn" onclick="loadSector('crypto')">💰 크립토/선물</button>
+        <button class="sector-btn" onclick="changeChart('의료ID입력', this)">🏥 의료/바이오</button>
+        <button class="sector-btn" onclick="changeChart('반도체ID입력', this)">💻 반도체/AI</button>
+        <button class="sector-btn" onclick="changeChart('크립토ID입력', this)">💰 크립토/선물</button>
+        <button class="sector-btn" onclick="changeChart('r79B3K5F', this)">💰 전력</button>
+        
+        <span class="info-text">Updated: 2026.01.13</span>
     </div>
 
-    <div id="chart-box"></div>
+    <iframe id="chart-frame" 
+            src="https://www.tradingview.com/chart/embed/의료ID입력/?theme=light&interval=D&saveimage=0&toolbarbg=f1f3f6&details=1&calendar=1&hotlist=1">
+    </iframe>
 
     <script>
-        // ▲ 3. 여기에 섹터별 데이터를 정의하세요 (닥터스핏님의 관심 종목)
-        const sectors = {
-            'medical': {
-                main: "AMEX:XLV", // 메인으로 띄울 종목 (예: 헬스케어 ETF)
-                list: ["NASDAQ:NTLA", "NASDAQ:TEM", "AMEX:XLV", "NYSE:PFE", "NYSE:JNJ"] // 우측 리스트
-            },
-            'tech': {
-                main: "NASDAQ:NVDA",
-                list: ["NASDAQ:NVDA", "NASDAQ:TSLA", "NASDAQ:AMD", "NASDAQ:MSFT", "NASDAQ:SOXL"]
-            },
-            'crypto': {
-                main: "BINANCE:BTCUSDT.P", // 선물 차트
-                list: ["BINANCE:BTCUSDT.P", "BINANCE:ETHUSDT.P", "BINANCE:SOLUSDT.P", "CRYPTOCAP:USDT.D", "CRYPTOCAP:TOTAL"]
-            }
-        };
-
-        let currentWidget = null;
-
-        function loadSector(sectorName) {
-            // 버튼 스타일 활성화 (UX)
+        function changeChart(chartId, btnElement) {
+            // 1. 버튼 스타일 변경
             document.querySelectorAll('.sector-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
+            if(btnElement) btnElement.classList.add('active');
 
-            // 기존 차트 삭제
-            const container = document.getElementById('chart-box');
-            container.innerHTML = ''; 
-
-            // 새 차트 컨테이너 생성
-            const widgetContainer = document.createElement('div');
-            widgetContainer.className = 'tradingview-widget-container';
-            
-            const widgetDiv = document.createElement('div');
-            widgetDiv.className = 'tradingview-widget-container__widget';
-            widgetDiv.style.height = '100%';
-            widgetDiv.style.width = '100%';
-            
-            // 스크립트 생성 (TradingView Advanced Chart)
-            const script = document.createElement('script');
-            script.type = 'text/javascript';
-            script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
-            script.async = true;
-
-            // 설정값 주입
-            script.innerHTML = JSON.stringify({
-                "autosize": true,
-                "symbol": sectors[sectorName].main, // 섹터별 메인 종목
-                "interval": "D",
-                "timezone": "Asia/Seoul",
-                "theme": "light",
-                "style": "1",
-                "locale": "kr",
-                "enable_publishing": false,
-                "withdateranges": true,
-                "hide_side_toolbar": false,
-                "allow_symbol_change": true,
-                "watchlist": sectors[sectorName].list, // 섹터별 리스트
-                "details": true,
-                "hotlist": true,
-                "calendar": false,
-                "show_popup_button": true,
-                "popup_width": "1000",
-                "popup_height": "650"
-            });
-
-            widgetContainer.appendChild(widgetDiv);
-            widgetContainer.appendChild(script);
-            container.appendChild(widgetContainer);
+            // 2. iframe 주소 교체 (핵심)
+            const frame = document.getElementById('chart-frame');
+            // 차트 ID를 URL 포맷에 맞춰 갈아끼웁니다
+            frame.src = `https://www.tradingview.com/chart/embed/${chartId}/?theme=light&interval=D&saveimage=0&toolbarbg=f1f3f6&details=1&calendar=1&hotlist=1`;
         }
 
-        // 초기 로딩 (의료 섹터)
-        window.onload = function() {
-            // 첫 번째 버튼 강제 클릭 효과
-            document.querySelector('.sector-btn').click();
-        }
+        // 초기화: 첫 번째 버튼 활성화
+        document.querySelector('.sector-btn').classList.add('active');
     </script>
 </body>
 </html>
